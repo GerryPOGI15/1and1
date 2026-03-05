@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy 13th Monthsary — ASCII Art</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lato:wght@300;400&family=Playfair+Display:ital,wght@0,400;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inconsolata:wght@300;400;700&display=swap');
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --cream:  #fdf6ec;
+  --warm:   #f5e6d0;
+  --petal:  #e8c9b0;
+  --blush:  #c9826a;
+  --rose:   #9b4f3f;
+  --deep:   #3a1f1a;
+  --ink:    #1a0f0c;
+  --gold:   #c4973a;
+
+  /* intro palette */
+  --bg:     #0d0608;
+  --irose:  #e8637a;
+  --iblush: #f2a7b5;
+  --ipetal: #fce4ec;
+  --igold:  #f0c97a;
+  --glow:   rgba(232,99,122,0.35);
+}
+
+html, body { height:100%; overflow:hidden; }
+
+/* ═══════════════════════════════════════════
+   INTRO OVERLAY
+═══════════════════════════════════════════ */
+#intro {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  /* fade-out triggered by JS */
+  transition: opacity 1.8s ease, transform 1.8s ease;
+}
+
+#intro.fading {
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
+}
+
+#intro.gone { display: none; }
+
+/* canvas behind intro */
+#intro-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.intro-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 58%, rgba(232,99,122,0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 38% 28% at 50% 44%, rgba(240,201,122,0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.intro-scene {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+}
+
+/* ornaments */
+.orn {
+  position: absolute;
+  font-size: 1.4rem;
+  color: rgba(232,99,122,0.22);
+  z-index: 5;
+  animation: ornPulse 4s ease infinite;
+  filter: drop-shadow(0 0 6px rgba(232,99,122,0.3));
+}
+.orn.tl { top:1.2rem; left:1.4rem; animation-delay:0s; }
+.orn.tr { top:1.2rem; right:1.4rem; animation-delay:1s; }
+.orn.bl { bottom:1.2rem; left:1.4rem; animation-delay:2s; }
+.orn.br { bottom:1.2rem; right:1.4rem; animation-delay:.5s; }
+@keyframes ornPulse {
+  0%,100%{ opacity:.25; transform:scale(1); }
+  50%    { opacity:.65; transform:scale(1.15); }
+}
+
+.pre-text {
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  font-size: clamp(.6rem,1.4vw,.8rem);
+  letter-spacing: .55em;
+  text-transform: uppercase;
+  color: var(--iblush);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: iUp 1s ease .3s forwards;
+  margin-bottom: 1.1rem;
+}
+
+.hearts-row {
+  display: flex; gap:.5rem;
+  margin-bottom:.9rem;
+  opacity:0;
+  animation: iUp .8s ease .7s forwards;
+}
+.hearts-row span {
+  font-size: clamp(.8rem,1.8vw,1rem);
+  display: inline-block;
+  color: var(--irose);
+  filter: drop-shadow(0 0 6px var(--irose));
+  animation: hPulse 1.8s ease infinite;
+}
+.hearts-row span:nth-child(2){ animation-delay:.3s; color:var(--igold); filter:drop-shadow(0 0 6px var(--igold)); }
+.hearts-row span:nth-child(3){ animation-delay:.6s; }
+.hearts-row span:nth-child(4){ animation-delay:.9s; color:var(--igold); filter:drop-shadow(0 0 6px var(--igold)); }
+.hearts-row span:nth-child(5){ animation-delay:1.2s; }
+@keyframes hPulse {
+  0%,100%{ transform:scale(1); }
+  50%    { transform:scale(1.35); }
+}
+
+.word-happy {
+  display: block;
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(3.8rem,11vw,8.5rem);
+  color: #fff5f7;
+  text-shadow: 0 0 30px var(--glow), 0 0 80px rgba(232,99,122,.2), 0 2px 0 rgba(0,0,0,.4);
+  opacity: 0;
+  transform: translateY(28px) scale(.93);
+  animation: titleRev 1.2s cubic-bezier(.16,1,.3,1) 1.0s forwards;
+  letter-spacing:.02em;
+}
+
+.word-number {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: clamp(4.2rem,13vw,10.5rem);
+  line-height: .9;
+  background: linear-gradient(135deg, var(--igold) 0%, var(--irose) 50%, var(--iblush) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 18px rgba(240,201,122,.4));
+  opacity: 0;
+  transform: scale(.86);
+  animation: numRev 1.4s cubic-bezier(.34,1.56,.64,1) 1.6s forwards;
+  position: relative;
+}
+
+.word-monthsary {
+  display: block;
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(3.2rem,9.5vw,7rem);
+  color: var(--iblush);
+  text-shadow: 0 0 25px rgba(242,167,181,.5), 0 2px 0 rgba(0,0,0,.3);
+  opacity: 0;
+  transform: translateY(20px);
+  animation: iUp 1.1s cubic-bezier(.16,1,.3,1) 2.4s forwards;
+  margin-top:.15rem;
+}
+
+.deco-line {
+  display: flex; align-items:center; gap:.8rem;
+  margin: 1.3rem 0 1rem;
+  opacity:0;
+  animation: iUp .9s ease 3.0s forwards;
+}
+.deco-line::before,.deco-line::after {
+  content:'';
+  display:block;
+  width:clamp(36px,9vw,80px);
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--irose),transparent);
+}
+.deco-heart {
+  font-size:.95rem; color:var(--irose);
+  filter:drop-shadow(0 0 8px var(--irose));
+  animation:hPulse 1.4s ease infinite;
+}
+
+.intro-sub {
+  font-family:'Lato',sans-serif;
+  font-weight:300;
+  font-size:clamp(.65rem,1.6vw,.88rem);
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:var(--iblush);
+  opacity:0;
+  animation:iUp 1s ease 3.3s forwards;
+  line-height:2;
+}
+.intro-sub em { font-style:normal; color:var(--igold); font-weight:400; }
+
+.intro-note {
+  position: absolute;
+  bottom: 1.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family:'Playfair Display',serif;
+  font-style:italic;
+  font-size:clamp(.65rem,1.4vw,.82rem);
+  color:rgba(242,167,181,.5);
+  letter-spacing:.08em;
+  white-space:nowrap;
+  opacity:0;
+  animation:iUp 1s ease 4.0s forwards;
+  z-index:10;
+}
+
+/* skip button */
+#skip-btn {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.8rem;
+  z-index: 20;
+  background: transparent;
+  border: 1px solid rgba(242,167,181,.3);
+  color: rgba(242,167,181,.5);
+  font-family:'Inconsolata',monospace;
+  font-size:.6rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  padding:6px 14px;
+  cursor:pointer;
+  transition:all .2s;
+  opacity:0;
+  animation:iUp .8s ease 4.5s forwards;
+}
+#skip-btn:hover {
+  border-color:rgba(242,167,181,.7);
+  color:rgba(242,167,181,.9);
+}
+
+/* burst on click */
+.burst {
+  position:fixed;
+  pointer-events:none;
+  z-index:999;
+  font-size:1.2rem;
+  animation:burstAnim .9s ease forwards;
+}
+@keyframes burstAnim {
+  0%  { opacity:1; transform:translate(-50%,-50%) scale(.3); }
+  40% { opacity:1; transform:translate(-50%,-50%) scale(1.4); }
+  100%{ opacity:0; transform:translate(-50%,calc(-50% - 55px)) scale(.8); }
+}
+
+@keyframes iUp {
+  from{ opacity:0; transform:translateY(14px); }
+  to  { opacity:1; transform:translateY(0); }
+}
+@keyframes titleRev {
+  from{ opacity:0; transform:translateY(28px) scale(.93); }
+  to  { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes numRev {
+  from{ opacity:0; transform:scale(.86); }
+  to  { opacity:1; transform:scale(1); }
+}
+
+/* ═══════════════════════════════════════════
+   ASCII APP (hidden until intro fades)
+═══════════════════════════════════════════ */
+#app-wrap {
+  position: fixed;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.4s ease;
+  background: var(--cream);
+  color: var(--deep);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  overflow: hidden;
+}
+
+#app-wrap.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* grain */
+#app-wrap::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:1000;
+  opacity:.6;
+}
+
+.app {
+  display:grid;
+  grid-template-columns:290px 1fr;
+  grid-template-rows:auto 1fr;
+  height:100vh;
+}
+
+header {
+  grid-column:1/-1;
+  padding:.9rem 1.8rem;
+  border-bottom:1px solid var(--petal);
+  display:flex;
+  align-items:baseline;
+  gap:1.2rem;
+  background:var(--cream);
+}
+
+.title { font-size:1.5rem; font-weight:300; font-style:italic; letter-spacing:.02em; color:var(--rose); }
+.title em { font-style:normal; color:var(--gold); }
+.tagline { font-size:.62rem; font-family:'Inconsolata',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--blush); opacity:.6; }
+
+/* monthsary badge in header */
+.monthsary-badge {
+  margin-left:auto;
+  font-family:'Great Vibes',cursive;
+  font-size:1.1rem;
+  color:var(--rose);
+  opacity:.7;
+  letter-spacing:.02em;
+}
+
+.sidebar {
+  border-right:1px solid var(--petal);
+  background:var(--warm);
+  padding:1.3rem;
+  display:flex;
+  flex-direction:column;
+  gap:1.2rem;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--petal) transparent;
+}
+
+.upload-area {
+  border:1.5px dashed var(--petal);
+  border-radius:2px;
+  padding:1.5rem 1rem;
+  text-align:center;
+  cursor:pointer;
+  position:relative;
+  transition:all .25s;
+  background:var(--cream);
+}
+.upload-area:hover,.upload-area.over { border-color:var(--blush); background:#fdf0e8; }
+.upload-area input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; }
+.upload-icon { font-size:1.7rem; display:block; margin-bottom:.4rem; color:var(--blush); }
+.upload-area p { font-size:.78rem; font-style:italic; color:var(--blush); line-height:1.6; }
+.upload-area small { font-family:'Inconsolata',monospace; font-size:.6rem; letter-spacing:.15em; color:var(--petal); text-transform:uppercase; display:block; margin-top:.3rem; }
+
+.preview-wrap { display:none; flex-direction:column; gap:.4rem; }
+.preview-wrap img { width:100%; height:130px; object-fit:cover; border:1px solid var(--petal); display:block; }
+.preview-wrap span { font-family:'Inconsolata',monospace; font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:var(--blush); opacity:.5; text-align:center; }
+
+.group-label { font-family:'Inconsolata',monospace; font-size:.58rem; letter-spacing:.28em; text-transform:uppercase; color:var(--blush); opacity:.72; margin-bottom:.5rem; }
+
+.slider-wrap { display:flex; flex-direction:column; gap:.8rem; }
+.slider-item { display:flex; flex-direction:column; gap:4px; }
+.slider-meta { display:flex; justify-content:space-between; font-size:.68rem; color:var(--deep); opacity:.7; }
+.slider-meta .val { font-family:'Inconsolata',monospace; font-size:.74rem; color:var(--rose); opacity:1; }
+
+input[type=range] { -webkit-appearance:none; width:100%; height:1px; background:var(--petal); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--rose); cursor:pointer; box-shadow:0 1px 4px rgba(155,79,63,.35); transition:transform .15s; }
+input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.25); }
+
+.toggle-row { display:flex; gap:0; }
+.toggle-row input { display:none; }
+.toggle-row label { flex:1; text-align:center; padding:5px 0; font-family:'Inconsolata',monospace; font-size:.58rem; letter-spacing:.15em; text-transform:uppercase; cursor:pointer; border:1px solid var(--petal); margin-right:-1px; color:var(--blush); transition:all .15s; background:var(--cream); }
+.toggle-row input:checked+label { background:var(--rose); color:var(--cream); border-color:var(--rose); }
+
+.charset-row { display:flex; flex-wrap:wrap; gap:0; }
+.charset-row input { display:none; }
+.charset-row label { flex:1; min-width:calc(50% - 1px); text-align:center; padding:5px 4px; font-family:'Inconsolata',monospace; font-size:.56rem; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; border:1px solid var(--petal); margin-right:-1px; margin-bottom:-1px; color:var(--blush); transition:all .15s; background:var(--cream); }
+.charset-row input:checked+label { background:var(--blush); color:var(--cream); border-color:var(--blush); }
+
+.btn-go { background:var(--rose); color:var(--cream); border:none; padding:11px; font-family:'Cormorant Garamond',serif; font-size:1rem; font-style:italic; letter-spacing:.08em; cursor:pointer; width:100%; transition:all .2s; }
+.btn-go:hover { background:var(--deep); }
+.btn-go:active { transform:scale(.98); }
+
+.btn-save { background:transparent; border:1px solid var(--petal); color:var(--blush); padding:7px; font-family:'Inconsolata',monospace; font-size:.61rem; letter-spacing:.2em; text-transform:uppercase; cursor:pointer; width:100%; transition:all .2s; }
+.btn-save:hover { border-color:var(--blush); color:var(--rose); }
+.btn-row { display:flex; gap:6px; }
+.btn-row .btn-save { flex:1; }
+
+.output { background:#fff9f4; display:flex; flex-direction:column; overflow:hidden; }
+
+.output-bar { padding:.5rem 1.3rem; border-bottom:1px solid var(--petal); display:flex; align-items:center; gap:.7rem; background:var(--cream); }
+.output-bar span { font-family:'Inconsolata',monospace; font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:var(--blush); opacity:.62; }
+.output-bar .stat { color:var(--rose); opacity:1; font-size:.7rem; }
+
+.quality-badge { margin-left:auto; font-family:'Inconsolata',monospace; font-size:.56rem; letter-spacing:.15em; text-transform:uppercase; color:var(--gold); opacity:.8; display:none; }
+.heart-blink { font-size:.8rem; animation:heartbeat 1.4s ease infinite; color:var(--rose); }
+@keyframes heartbeat { 0%,100%{transform:scale(1);opacity:1;} 14%{transform:scale(1.25);} 28%{transform:scale(1);} 42%{transform:scale(1.15);} 70%{transform:scale(1);opacity:.4;} }
+
+.canvas-area { flex:1; overflow:auto; padding:1.3rem 1.6rem; display:flex; align-items:flex-start; justify-content:flex-start; scrollbar-width:thin; scrollbar-color:var(--petal) transparent; }
+
+#ascii-out { font-family:'Inconsolata',monospace; font-size:7px; line-height:1.1; white-space:pre; letter-spacing:.02em; color:var(--ink); display:none; transform-origin:top left; }
+
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; width:100%; text-align:center; gap:1rem; }
+.empty-heart { font-size:3rem; animation:heartbeat 1.4s ease infinite; color:var(--petal); }
+.empty-state p { font-style:italic; font-size:1rem; color:var(--blush); opacity:.42; }
+.empty-state small { font-family:'Inconsolata',monospace; font-size:.58rem; letter-spacing:.22em; text-transform:uppercase; color:var(--petal); }
+
+.progress-wrap { display:none; position:absolute; inset:0; background:rgba(253,246,236,.85); align-items:center; justify-content:center; flex-direction:column; gap:.8rem; z-index:10; }
+.progress-wrap.active { display:flex; }
+.progress-bar-outer { width:170px; height:1px; background:var(--petal); }
+.progress-bar-inner { height:1px; background:var(--rose); width:0%; transition:width .1s linear; }
+.progress-label { font-family:'Inconsolata',monospace; font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; color:var(--blush); }
+
+canvas { display:none; }
+img#src { display:none; }
+
+/* replay button */
+#replay-btn {
+  position: fixed;
+  top: .9rem;
+  right: 1.2rem;
+  z-index: 500;
+  background: transparent;
+  border: 1px solid var(--petal);
+  color: var(--blush);
+  font-family:'Inconsolata',monospace;
+  font-size:.58rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  padding:5px 12px;
+  cursor:pointer;
+  transition:all .2s;
+  opacity:0;
+  display:none;
+}
+#replay-btn.show { display:block; animation:fadeIn .6s ease .5s forwards; }
+#replay-btn:hover { border-color:var(--blush); color:var(--rose); }
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+/* ── AUTO-PROMPT OVERLAY ── */
+#auto-prompt {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: rgba(253,246,236,0.96);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+#auto-prompt .ap-heart {
+  font-size: 3rem;
+  animation: heartbeat 1.4s ease infinite;
+  color: var(--rose);
+}
+
+#auto-prompt h2 {
+  font-family: 'Great Vibes', cursive;
+  font-size: 2.2rem;
+  color: var(--rose);
+  font-weight: 400;
+}
+
+#auto-prompt p {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--blush);
+  max-width: 320px;
+  line-height: 1.7;
+}
+
+#auto-prompt .ap-btn {
+  background: var(--rose);
+  color: var(--cream);
+  border: none;
+  padding: 12px 28px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+#auto-prompt .ap-btn:hover { background: var(--deep); }
+#auto-prompt .ap-file { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ═══ INTRO ═══ -->
+<div id="intro">
+  <canvas id="intro-canvas"></canvas>
+  <div class="intro-glow"></div>
+
+  <div class="orn tl">✿</div>
+  <div class="orn tr">✿</div>
+  <div class="orn bl">✿</div>
+  <div class="orn br">✿</div>
+
+  <div class="intro-scene">
+    <div class="pre-text">with all my heart &nbsp;·&nbsp; for you</div>
+
+    <div class="hearts-row">
+      <span>♥</span><span>✦</span><span>♥</span><span>✦</span><span>♥</span>
+    </div>
+
+    <span class="word-happy">Happy</span>
+    <span class="word-number">13th</span>
+    <span class="word-monthsary">Monthsary</span>
+
+    <div class="deco-line"><span class="deco-heart">♥</span></div>
+
+    <div class="intro-sub">
+      thirteen months of love &nbsp;<em>·</em>&nbsp; and counting forever
+    </div>
+  </div>
+
+  <div class="intro-note">every day with you is my favourite day ♥</div>
+  <button id="skip-btn" onclick="skipIntro()">skip ›</button>
+</div>
+
+<!-- ═══ ASCII APP ═══ -->
+<div id="app-wrap">
+  <div class="app">
+    <header>
+      <div class="title">I <em>love</em> you</div>
+      <div class="tagline">ASCII Art Portrait Generator</div>
+      <div class="monthsary-badge">Happy 13th Monthsary ♥</div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="upload-area" id="dropZone">
+        <input type="file" id="fileIn" accept="image/*">
+        <span class="upload-icon">🌸</span>
+        <p>Drop a photo here<br>or click to choose</p>
+        <small>JPG · PNG · WEBP · GIF</small>
+      </div>
+
+      <div class="preview-wrap" id="previewWrap">
+        <img id="previewImg" src="" alt="">
+        <span>Source Image</span>
+      </div>
+
+      <div>
+        <div class="group-label">Resolution</div>
+        <div class="slider-wrap">
+          <div class="slider-item">
+            <div class="slider-meta"><span>Width (chars)</span><span class="val" id="wVal">200</span></div>
+            <input type="range" id="wSlider" min="80" max="320" value="200">
+          </div>
+          <div class="slider-item">
+            <div class="slider-meta"><span>Font size (px)</span><span class="val" id="fsVal">7.0</span></div>
+            <input type="range" id="fsSlider" min="30" max="120" value="70">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="group-label">Tone</div>
+        <div class="slider-wrap">
+          <div class="slider-item">
+            <div class="slider-meta"><span>Contrast</span><span class="val" id="cVal">1.2×</span></div>
+            <input type="range" id="cSlider" min="50" max="350" value="120">
+          </div>
+          <div class="slider-item">
+            <div class="slider-meta"><span>Brightness</span><span class="val" id="bVal">0</span></div>
+            <input type="range" id="bSlider" min="-80" max="80" value="0">
+          </div>
+          <div class="slider-item">
+            <div class="slider-meta"><span>Gamma</span><span class="val" id="gVal">1.00</span></div>
+            <input type="range" id="gSlider" min="50" max="250" value="100">
+          </div>
+          <div class="slider-item">
+            <div class="slider-meta"><span>Edge enhance</span><span class="val" id="eVal">0.40</span></div>
+            <input type="range" id="eSlider" min="0" max="100" value="40">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="group-label">Style</div>
+        <div class="toggle-row">
+          <input type="radio" name="mode" id="mDark" value="dark" checked>
+          <label for="mDark">Dark</label>
+          <input type="radio" name="mode" id="mLight" value="light">
+          <label for="mLight">Light</label>
+        </div>
+      </div>
+
+      <div>
+        <div class="group-label">Character Set</div>
+        <div class="charset-row">
+          <input type="radio" name="charset" id="csLove" value="love" checked>
+          <label for="csLove">I love you</label>
+          <input type="radio" name="charset" id="csBlock" value="block">
+          <label for="csBlock">Block</label>
+          <input type="radio" name="charset" id="csPhotoreal" value="photoreal">
+          <label for="csPhotoreal">Photoreal</label>
+          <input type="radio" name="charset" id="csDots" value="dots">
+          <label for="csDots">Dots</label>
+        </div>
+      </div>
+
+      <button class="btn-go" onclick="render()">✦ Render with Love</button>
+      <div class="btn-row">
+        <button class="btn-save" onclick="saveTxt()">↓ .txt</button>
+        <button class="btn-save" onclick="savePng()">↓ .png</button>
+      </div>
+    </aside>
+
+    <main class="output" style="position:relative;">
+      <div class="output-bar">
+        <span>Cols</span><span class="stat" id="sCols">—</span>
+        <span>×</span>
+        <span>Rows</span><span class="stat" id="sRows">—</span>
+        <span id="qualityBadge" class="quality-badge">✦ High Fidelity</span>
+        <div class="heart-blink">♥</div>
+      </div>
+      <div class="canvas-area">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-heart">♥</div>
+          <p>Upload a photo to begin</p>
+          <small>Your portrait will appear here</small>
+        </div>
+        <pre id="ascii-out"></pre>
+      </div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+        <div class="progress-label" id="progressLabel">Rendering…</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+
+<!-- AUTO-PROMPT OVERLAY -->
+<div id="auto-prompt">
+  <div class="ap-heart">♥</div>
+  <h2>Upload your photo</h2>
+  <p>Place <strong>shek.jpeg</strong> in the same folder and open via a local server,<br>or pick your photo below to render it now.</p>
+  <button class="ap-btn" onclick="document.getElementById('ap-file-input').click()">🌸 Choose Photo</button>
+  <input type="file" id="ap-file-input" class="ap-file" accept="image/*">
+</div>
+
+<!-- replay button (shown after intro) -->
+<button id="replay-btn" onclick="replayIntro()">♥ replay intro</button>
+
+<canvas id="cv"></canvas>
+<img id="src">
+
+<script>
+// ═══════════════════════════════════════════
+//  STATIC PLACEHOLDER IMAGE (auto-renders after intro)
+// ═══════════════════════════════════════════
+const STATIC_IMG_SRC = 'shek.jpeg';
+
+// ═══════════════════════════════════════════
+//  INTRO CANVAS — petals, sparks, shooters
+// ═══════════════════════════════════════════
+const iCanvas = document.getElementById('intro-canvas');
+const iCtx = iCanvas.getContext('2d');
+let IW, IH;
+let introRAF = null;
+
+function resizeIntro() {
+  IW = iCanvas.width  = window.innerWidth;
+  IH = iCanvas.height = window.innerHeight;
+}
+resizeIntro();
+window.addEventListener('resize', resizeIntro);
+
+const PETAL_EMOJIS = ['🌸','🌷','✿','❀','🌹'];
+
+class Petal {
+  constructor(fromTop) { this.reset(fromTop); }
+  reset(fromTop) {
+    this.x = Math.random() * IW;
+    this.y = fromTop ? -40 : Math.random() * IH;
+    this.size  = 10 + Math.random() * 15;
+    this.vx    = (Math.random() - .5) * .6;
+    this.vy    = .35 + Math.random() * .65;
+    this.angle = Math.random() * Math.PI * 2;
+    this.va    = (Math.random() - .5) * .018;
+    this.alpha = .12 + Math.random() * .4;
+    this.emoji = PETAL_EMOJIS[Math.floor(Math.random() * PETAL_EMOJIS.length)];
+    this.swing = Math.random() * Math.PI * 2;
+    this.swingSpeed = .012 + Math.random() * .016;
+  }
+  update() {
+    this.swing += this.swingSpeed;
+    this.x += this.vx + Math.sin(this.swing) * .5;
+    this.y += this.vy;
+    this.angle += this.va;
+    if (this.y > IH + 50) this.reset(true);
+  }
+  draw() {
+    iCtx.save();
+    iCtx.globalAlpha = this.alpha;
+    iCtx.translate(this.x, this.y);
+    iCtx.rotate(this.angle);
+    iCtx.font = `${this.size}px serif`;
+    iCtx.textAlign = 'center';
+    iCtx.textBaseline = 'middle';
+    iCtx.fillText(this.emoji, 0, 0);
+    iCtx.restore();
+  }
+}
+
+class Spark {
+  constructor() { this.reset(); }
+  reset() {
+    this.x     = Math.random() * IW;
+    this.y     = Math.random() * IH;
+    this.r     = .5 + Math.random() * 1.7;
+    this.maxA  = .18 + Math.random() * .55;
+    this.speed = .008 + Math.random() * .018;
+    this.phase = Math.random() * Math.PI * 2;
+    this.color = Math.random() < .5 ? '#e8637a' : '#f0c97a';
+  }
+  update() { this.phase += this.speed; }
+  draw() {
+    iCtx.save();
+    iCtx.globalAlpha = this.maxA * (.5 + .5 * Math.sin(this.phase));
+    iCtx.beginPath();
+    iCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    iCtx.fillStyle = this.color;
+    iCtx.shadowColor = this.color;
+    iCtx.shadowBlur = 6;
+    iCtx.fill();
+    iCtx.restore();
+  }
+}
+
+class Shooter {
+  constructor() { this.reset(); }
+  reset() {
+    this.x    = Math.random() < .5 ? -20 : IW + 20;
+    this.y    = IH * .2 + Math.random() * IH * .5;
+    this.vx   = this.x < 0 ? 1.5 + Math.random() * 2 : -(1.5 + Math.random() * 2);
+    this.vy   = -.7 + Math.random() * 1.4;
+    this.alpha= .55 + Math.random() * .4;
+    this.size = 9 + Math.random() * 8;
+    this.trail= [];
+    this.life = 0;
+    this.maxLife = 120 + Math.random() * 80;
+  }
+  update() {
+    this.trail.push({ x:this.x, y:this.y });
+    if (this.trail.length > 16) this.trail.shift();
+    this.x += this.vx; this.y += this.vy; this.life++;
+    if (this.life > this.maxLife || this.x < -60 || this.x > IW + 60) this.reset();
+  }
+  draw() {
+    for (let i = 0; i < this.trail.length; i++) {
+      const t = i / this.trail.length;
+      iCtx.save();
+      iCtx.globalAlpha = t * this.alpha * .35;
+      iCtx.beginPath();
+      iCtx.arc(this.trail[i].x, this.trail[i].y, this.size * .17 * t, 0, Math.PI * 2);
+      iCtx.fillStyle = '#e8637a';
+      iCtx.fill();
+      iCtx.restore();
+    }
+    iCtx.save();
+    iCtx.globalAlpha = this.alpha;
+    iCtx.font = `${this.size}px serif`;
+    iCtx.textAlign = 'center';
+    iCtx.textBaseline = 'middle';
+    iCtx.fillText('♥', this.x, this.y);
+    iCtx.restore();
+  }
+}
+
+const petals   = Array.from({length:26}, () => new Petal(false));
+const sparks   = Array.from({length:50}, () => new Spark());
+const shooters = Array.from({length:3},  () => new Shooter());
+
+function introLoop() {
+  iCtx.clearRect(0, 0, IW, IH);
+  sparks.forEach(s => { s.update(); s.draw(); });
+  petals.forEach(p => { p.update(); p.draw(); });
+  shooters.forEach(s => { s.update(); s.draw(); });
+  introRAF = requestAnimationFrame(introLoop);
+}
+introLoop();
+
+// Click burst
+const BURST_CHARS = ['♥','♡','✦','✿','★','❀'];
+document.getElementById('intro').addEventListener('click', e => {
+  if (e.target.id === 'skip-btn') return;
+  spawnBurst(e.clientX, e.clientY);
+});
+
+function spawnBurst(cx, cy) {
+  const count = 5 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'burst';
+    const angle = Math.random() * 360;
+    const dist  = 18 + Math.random() * 45;
+    el.textContent = BURST_CHARS[Math.floor(Math.random() * BURST_CHARS.length)];
+    el.style.left  = (cx + Math.cos(angle * Math.PI/180) * dist) + 'px';
+    el.style.top   = (cy + Math.sin(angle * Math.PI/180) * dist) + 'px';
+    el.style.color = Math.random() < .6 ? '#e8637a' : '#f0c97a';
+    el.style.filter= 'drop-shadow(0 0 6px currentColor)';
+    el.style.animationDelay = (i * .04) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+}
+
+// ── AUTO-TRANSITION after 5.5s ──
+let introTimer = setTimeout(beginFade, 5500);
+
+function beginFade() {
+  clearTimeout(introTimer);
+  const intro = document.getElementById('intro');
+  intro.classList.add('fading');
+  document.getElementById('app-wrap').classList.add('visible');
+
+  setTimeout(() => {
+    intro.classList.add('gone');
+    cancelAnimationFrame(introRAF);
+    document.getElementById('replay-btn').classList.add('show');
+    // Auto-render the static placeholder image
+    autoRenderStatic();
+  }, 1900);
+}
+
+function applyLoveSettings() {
+  document.querySelector('input[name="charset"][value="love"]').checked = true;
+  document.getElementById('wSlider').value  = 220; document.getElementById('wVal').textContent  = '220';
+  document.getElementById('fsSlider').value = 60;  document.getElementById('fsVal').textContent = '6.0';
+  document.getElementById('cSlider').value  = 130; document.getElementById('cVal').textContent  = '1.3×';
+  document.getElementById('gSlider').value  = 90;  document.getElementById('gVal').textContent  = '0.90';
+  document.getElementById('eSlider').value  = 45;  document.getElementById('eVal').textContent  = '0.45';
+}
+
+function autoRenderStatic() {
+  applyLoveSettings();
+  fetch(STATIC_IMG_SRC)
+    .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.blob(); })
+    .then(blob => new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload  = () => res(fr.result);
+      fr.onerror = rej;
+      fr.readAsDataURL(blob);
+    }))
+    .then(dataUrl => {
+      imgSrc = dataUrl;
+      document.getElementById('previewImg').src = dataUrl;
+      document.getElementById('previewWrap').style.display = 'flex';
+      render();
+    })
+    .catch(err => console.warn('Auto-load failed:', err));
+}
+
+function showAutoPrompt() {
+  const overlay = document.getElementById('auto-prompt');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function skipIntro() { beginFade(); }
+
+function replayIntro() {
+  const intro = document.getElementById('intro');
+  intro.classList.remove('fading', 'gone');
+  document.getElementById('app-wrap').classList.remove('visible');
+  document.getElementById('replay-btn').classList.remove('show');
+
+  // restart canvas
+  introRAF = requestAnimationFrame(introLoop);
+  introTimer = setTimeout(beginFade, 5500);
+}
+
+// ═══════════════════════════════════════════
+//  ASCII ENGINE
+// ═══════════════════════════════════════════
+const CHARSETS = {
+  love:      { usesPhrase:true  },
+  block:     { ramp:['█','▓','▒','░','▐','▌','▪','·',' ',' '] },
+  photoreal: { ramp:['@','#','S','%','?','*','+',';',':',',','.',' '] },
+  dots:      { ramp:['⣿','⣶','⣤','⣀','⡀','⠄','⠂','⠁',' ',' '] }
+};
+
+let imgSrc = null;
+
+const fileIn  = document.getElementById('fileIn');
+const dropZone = document.getElementById('dropZone');
+
+fileIn.addEventListener('change', e => { if (e.target.files[0]) loadImg(e.target.files[0]); });
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('over');
+  if (e.dataTransfer.files[0]) loadImg(e.dataTransfer.files[0]);
+});
+
+function loadImg(file) {
+  if (!file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imgSrc = ev.target.result;
+    document.getElementById('previewImg').src = imgSrc;
+    document.getElementById('previewWrap').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function wire(id, vid, fmt) {
+  const el = document.getElementById(id);
+  const vl = document.getElementById(vid);
+  el.addEventListener('input', () => vl.textContent = fmt(el.value));
+}
+wire('wSlider',  'wVal',  v => v);
+wire('fsSlider', 'fsVal', v => (v/10).toFixed(1));
+wire('cSlider',  'cVal',  v => (v/100).toFixed(1)+'×');
+wire('bSlider',  'bVal',  v => (v>0?'+':'')+v);
+wire('gSlider',  'gVal',  v => (v/100).toFixed(2));
+wire('eSlider',  'eVal',  v => (v/100).toFixed(2));
+
+function clamp(v) { return Math.max(0, Math.min(255, Math.round(v))); }
+
+function sobelEdges(gray, w, h) {
+  const edges = new Float32Array(w * h);
+  for (let y = 1; y < h-1; y++) {
+    for (let x = 1; x < w-1; x++) {
+      const gx = -gray[(y-1)*w+(x-1)] -2*gray[y*w+(x-1)] -gray[(y+1)*w+(x-1)]
+                 +gray[(y-1)*w+(x+1)] +2*gray[y*w+(x+1)] +gray[(y+1)*w+(x+1)];
+      const gy = -gray[(y-1)*w+(x-1)] -2*gray[(y-1)*w+x] -gray[(y-1)*w+(x+1)]
+                 +gray[(y+1)*w+(x-1)] +2*gray[(y+1)*w+x] +gray[(y+1)*w+(x+1)];
+      edges[y*w+x] = Math.min(255, Math.sqrt(gx*gx+gy*gy));
+    }
+  }
+  return edges;
+}
+
+function unsharpMask(gray, w, h, radius, amount) {
+  const blurred = new Float32Array(w*h);
+  const r = Math.max(1, Math.round(radius));
+  for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+    let sum=0, count=0;
+    for (let dy=-r; dy<=r; dy++) for (let dx=-r; dx<=r; dx++) {
+      const ny=y+dy, nx=x+dx;
+      if (ny>=0&&ny<h&&nx>=0&&nx<w) { sum+=gray[ny*w+nx]; count++; }
+    }
+    blurred[y*w+x]=sum/count;
+  }
+  const result = new Float32Array(w*h);
+  for (let i=0;i<w*h;i++) result[i]=clamp(gray[i]+amount*(gray[i]-blurred[i]));
+  return result;
+}
+
+function lumToChar(lum, edgeStr, mode, charsetKey, phraseIdx, edgeMix) {
+  let t = lum/255;
+  if (mode==='light') t=1-t;
+  const e = Math.min(1, edgeStr/200);
+  t = Math.max(0, t - e*edgeMix*0.6);
+
+  if (charsetKey==='love') {
+    // "I love you " repeating phrase mapped to luminance bands
+    // Lightest areas → space, mid → lowercase phrase, darkest → uppercase
+    // We never skip phraseIdx silently — every non-space pixel advances it
+    const phrase = "I love you ";
+    const pl = phrase.length;
+    if (t > 0.93) return ' ';                          // pure white → space
+    const c = phrase[phraseIdx % pl];
+    if (t > 0.78) {
+      // very light: use only visually thin chars (I, l, space→dot, i)
+      // map to light chars from the phrase
+      const lightChars = 'I l  u  ';
+      return lightChars[phraseIdx % lightChars.length] || '.';
+    } else if (t > 0.55) {
+      return c.toLowerCase();                          // mid-light: lowercase
+    } else if (t > 0.28) {
+      return c;                                        // mid-dark: normal case
+    } else {
+      // darkest: uppercase + denser feel
+      return c === ' ' ? (phraseIdx % 3 === 0 ? 'I' : 'o') : c.toUpperCase();
+    }
+  } else {
+    const ramp = CHARSETS[charsetKey].ramp;
+    return ramp[Math.min(ramp.length-1, Math.floor(t*ramp.length))];
+  }
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+function render() {
+  if (!imgSrc) { alert('Please upload a photo first.'); return; }
+
+  const cols       = parseInt(document.getElementById('wSlider').value);
+  const fontSize   = parseFloat(document.getElementById('fsSlider').value)/10;
+  const contrast   = parseFloat(document.getElementById('cSlider').value)/100;
+  const bright     = parseInt(document.getElementById('bSlider').value);
+  const gamma      = parseFloat(document.getElementById('gSlider').value)/100;
+  const edgeMix    = parseFloat(document.getElementById('eSlider').value)/100;
+  const mode       = document.querySelector('input[name="mode"]:checked').value;
+  const charsetKey = document.querySelector('input[name="charset"]:checked').value;
+
+  document.getElementById('progressWrap').classList.add('active');
+  setProgress(5,'Loading image…');
+
+  const img = new Image();
+  img.onload  = () => setTimeout(() => doRender(img,cols,fontSize,contrast,bright,gamma,edgeMix,mode,charsetKey), 30);
+  img.onerror = () => { document.getElementById('progressWrap').classList.remove('active'); alert('Failed to load image.'); };
+  img.src = imgSrc;
+}
+
+function doRender(img,cols,fontSize,contrast,bright,gamma,edgeMix,mode,charsetKey) {
+  setProgress(15,'Scaling…');
+  const aspect = img.naturalHeight/img.naturalWidth;
+  const rows   = Math.round(cols*aspect*0.52);
+
+  const cv = document.getElementById('cv');
+  cv.width=cols; cv.height=rows;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(img,0,0,cols,rows);
+
+  setProgress(30,'Processing pixels…');
+  const px = ctx.getImageData(0,0,cols,rows).data;
+  const gray = new Float32Array(cols*rows);
+  for (let i=0;i<cols*rows;i++) {
+    const pi=i*4;
+    let r=clamp(px[pi]+bright), g=clamp(px[pi+1]+bright), b=clamp(px[pi+2]+bright);
+    let lum=0.2126*r+0.7152*g+0.0722*b;
+    lum=255*Math.pow(lum/255,1.0/gamma);
+    gray[i]=clamp(128+(lum-128)*contrast);
+  }
+
+  setProgress(50,'Enhancing details…');
+  const sharpened = unsharpMask(gray,cols,rows,1.5,1.2);
+  const edges = sobelEdges(sharpened,cols,rows);
+
+  setProgress(70,'Generating characters…');
+  let out='', phraseIdx=0;
+  for (let y=0;y<rows;y++) {
+    for (let x=0;x<cols;x++) {
+      const i=y*cols+x;
+      const ch=lumToChar(sharpened[i],edges[i],mode,charsetKey,phraseIdx,edgeMix);
+      out+=ch;
+      if (ch!==' ') phraseIdx++;
+    }
+    out+='\n';
+  }
+
+  setProgress(90,'Rendering…');
+  setTimeout(() => {
+    const pre = document.getElementById('ascii-out');
+    document.getElementById('emptyState').style.display='none';
+    pre.style.display='block';
+    pre.textContent=out;
+    pre.style.fontSize=fontSize+'px';
+    pre.style.opacity='0';
+    pre.style.transform='translateY(8px)';
+    document.getElementById('sCols').textContent=cols;
+    document.getElementById('sRows').textContent=rows;
+    document.getElementById('qualityBadge').style.display='inline';
+    setProgress(100,'Done ♥');
+    requestAnimationFrame(()=>setTimeout(()=>{
+      document.getElementById('progressWrap').classList.remove('active');
+      pre.style.transition='opacity .45s ease, transform .45s ease';
+      pre.style.opacity='1';
+      pre.style.transform='translateY(0)';
+    },300));
+  },30);
+}
+
+function saveTxt() {
+  const pre=document.getElementById('ascii-out');
+  if (!pre.textContent.trim()) return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([pre.textContent],{type:'text/plain;charset=utf-8'}));
+  a.download='i-love-you-ascii.txt'; a.click();
+}
+
+function savePng() {
+  const pre=document.getElementById('ascii-out');
+  if (!pre.textContent.trim()) return;
+  const fs=parseFloat(pre.style.fontSize)||7;
+  const lines=pre.textContent.split('\n');
+  const oc=document.createElement('canvas');
+  oc.width=Math.ceil(lines[0].length*fs*0.6);
+  oc.height=Math.ceil(lines.length*fs*1.05);
+  const octx=oc.getContext('2d');
+  const mode=document.querySelector('input[name="mode"]:checked').value;
+  octx.fillStyle=mode==='light'?'#fff9f4':'#fdf6ec';
+  octx.fillRect(0,0,oc.width,oc.height);
+  octx.fillStyle='#1a0f0c';
+  octx.font=`${fs}px Inconsolata,monospace`;
+  octx.textBaseline='top';
+  lines.forEach((l,r)=>octx.fillText(l,0,r*fs*1.05));
+  const a=document.createElement('a');
+  a.href=oc.toDataURL('image/png');
+  a.download='i-love-you-ascii.png'; a.click();
+}
+
+// Wire auto-prompt file picker
+document.addEventListener('DOMContentLoaded', () => {
+  const apInput = document.getElementById('ap-file-input');
+  if (apInput) {
+    apInput.addEventListener('change', e => {
+      if (!e.target.files[0]) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        imgSrc = ev.target.result;
+        document.getElementById('previewImg').src = imgSrc;
+        document.getElementById('previewWrap').style.display = 'flex';
+        document.getElementById('auto-prompt').style.display = 'none';
+        render();
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    });
+  }
+});
+
+</script>
+</body>
+</html>
