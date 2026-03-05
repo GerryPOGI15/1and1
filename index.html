@@ -872,10 +872,10 @@ function applyLoveSettings() {
   document.querySelector('input[name="charset"][value="love"]').checked = true;
   document.getElementById('wSlider').value  = 200; document.getElementById('wVal').textContent  = '200';
   document.getElementById('fsSlider').value = 65;  document.getElementById('fsVal').textContent = '6.5';
-  document.getElementById('cSlider').value  = 110; document.getElementById('cVal').textContent  = '1.1×';
-  document.getElementById('bSlider').value  = 15;  document.getElementById('bVal').textContent  = '+15';
-  document.getElementById('gSlider').value  = 120; document.getElementById('gVal').textContent  = '1.20';
-  document.getElementById('eSlider').value  = 25;  document.getElementById('eVal').textContent  = '0.25';
+  document.getElementById('cSlider').value  = 120; document.getElementById('cVal').textContent  = '1.2×';
+  document.getElementById('bSlider').value  = 10;  document.getElementById('bVal').textContent  = '+10';
+  document.getElementById('gSlider').value  = 115; document.getElementById('gVal').textContent  = '1.15';
+  document.getElementById('eSlider').value  = 20;  document.getElementById('eVal').textContent  = '0.20';
   document.getElementById('mLight').checked = true;
 }
 
@@ -1018,46 +1018,42 @@ function unsharpMask(gray, w, h, radius, amount) {
 }
 
 function lumToChar(lum, edgeStr, mode, charsetKey, phraseIdx, edgeMix) {
-  // t = 0 means needs MOST ink (darkest pixel in light mode)
-  // t = 1 means needs LEAST ink (brightest pixel in light mode)
+  // t=0 → needs most ink (dark pixel), t=1 → needs least ink (bright pixel)
   let t = lum / 255;
-  if (mode === 'light') t = 1 - t;  // invert: dark pixel → t=0 → dense char
-
-  // Edges add a tiny bit of density for crispness
+  if (mode === 'light') t = 1 - t;
   const e = Math.min(1, edgeStr / 255);
   t = Math.max(0, t - e * edgeMix * 0.3);
 
   if (charsetKey === 'love') {
-    const phrase = "I love you ";
-    const pl = phrase.length;
-    const c  = phrase[phraseIdx % pl];
+    // Photoreal 12-level density ramp, but EVERY character is from "I love you "
+    // Density:  0=darkest/most ink  →  11=lightest/space
+    // We tile the phrase and pick WHICH character from it based on density level,
+    // but we NEVER output a symbol — only letters from the phrase or space.
 
-    // 10-level density ramp mapped to the phrase
-    // t=0 (darkest) → level 0 → densest chars (uppercase, doubled feel)
-    // t=1 (brightest) → level 9 → space
-    if (t > 0.90) {
-      return ' ';                                          // pure white bg
-    } else if (t > 0.78) {
-      // very light — use only the thinnest stroke chars from phrase: i, l, I, .
-      const thin = ['.', 'i', 'I', 'l', '.', 'I', 'i', '.', 'l', 'I', '.'];
-      return thin[phraseIdx % thin.length];
-    } else if (t > 0.64) {
-      // light — lowercase phrase chars, spaces replaced with thin char
-      return c === ' ' ? '.' : c.toLowerCase();
-    } else if (t > 0.50) {
-      // medium-light — normal lowercase phrase
-      return c === ' ' ? 'i' : c.toLowerCase();
-    } else if (t > 0.36) {
-      // medium — mixed case phrase as written
-      return c === ' ' ? 'u' : c;
-    } else if (t > 0.22) {
-      // medium-dark — uppercase phrase, spaces filled
-      return c === ' ' ? 'o' : c.toUpperCase();
-    } else {
-      // darkest — uppercase + fill spaces with dense chars
-      const dense = ['I','O','L','O','V','E','Y','O','U','I','O'];
-      return dense[phraseIdx % dense.length];
-    }
+    const phrase = "IloveyouIloveyouIloveyou"; // no spaces — we control spacing via density
+    const pl = phrase.length;
+
+    // Visual ink-weight of each letter (hand-tuned, 0=lightest, 1=densest)
+    // I=0.55  l=0.30  o=0.75  v=0.60  e=0.70  y=0.55  u=0.65
+    // We sort them into density tiers for each brightness band:
+    const densest  = 'ooeevvuuIIyy'; // 12 chars, heaviest visual weight
+    const dense    = 'ooevuIyolveI';
+    const mid      = 'IloveyouIlov';
+    const light    = 'IlyIuIlIyIlI';
+    const lightest = 'IlIlIlIlIlIl';
+
+    if      (t > 0.92) return ' ';
+    else if (t > 0.82) return lightest[phraseIdx % lightest.length];
+    else if (t > 0.70) return lightest[phraseIdx % lightest.length];
+    else if (t > 0.58) return light[phraseIdx % light.length];
+    else if (t > 0.47) return mid[phraseIdx % mid.length];
+    else if (t > 0.37) return mid[phraseIdx % mid.length];
+    else if (t > 0.27) return dense[phraseIdx % dense.length];
+    else if (t > 0.18) return dense[phraseIdx % dense.length];
+    else if (t > 0.10) return densest[phraseIdx % densest.length];
+    else if (t > 0.04) return densest[phraseIdx % densest.length];
+    else               return densest[phraseIdx % densest.length];
+
   } else {
     const ramp = CHARSETS[charsetKey].ramp;
     return ramp[Math.min(ramp.length - 1, Math.floor(t * ramp.length))];
