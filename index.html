@@ -672,9 +672,29 @@ img#src { display:none; }
 
 <script>
 // ═══════════════════════════════════════════
-//  STATIC PLACEHOLDER IMAGE (auto-renders after intro)
+//  CONFIG
 // ═══════════════════════════════════════════
-const STATIC_IMG_SRC = 'shek.jpeg';
+const STATIC_IMG_PATH = 'shek.jpeg';
+
+// Pre-fetch shek.jpeg immediately on page load → store as base64
+// so by the time the intro finishes, the image is already ready
+let preloadedDataUrl = null;
+
+(function preloadImage() {
+  fetch(STATIC_IMG_PATH)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+    .then(blob => new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload  = () => res(fr.result);
+      fr.onerror = rej;
+      fr.readAsDataURL(blob);
+    }))
+    .then(dataUrl => {
+      preloadedDataUrl = dataUrl;
+      console.log('shek.jpeg preloaded ✓');
+    })
+    .catch(e => console.warn('Preload failed (will need manual upload):', e));
+})();
 
 // ═══════════════════════════════════════════
 //  INTRO CANVAS — petals, sparks, shooters
@@ -844,42 +864,68 @@ function beginFade() {
     intro.classList.add('gone');
     cancelAnimationFrame(introRAF);
     document.getElementById('replay-btn').classList.add('show');
-    // Auto-render the static placeholder image
     autoRenderStatic();
   }, 1900);
 }
 
 function applyLoveSettings() {
   document.querySelector('input[name="charset"][value="love"]').checked = true;
-  document.getElementById('wSlider').value  = 220; document.getElementById('wVal').textContent  = '220';
-  document.getElementById('fsSlider').value = 60;  document.getElementById('fsVal').textContent = '6.0';
-  document.getElementById('cSlider').value  = 130; document.getElementById('cVal').textContent  = '1.3×';
-  document.getElementById('gSlider').value  = 90;  document.getElementById('gVal').textContent  = '0.90';
-  document.getElementById('eSlider').value  = 45;  document.getElementById('eVal').textContent  = '0.45';
+  document.getElementById('wSlider').value  = 200; document.getElementById('wVal').textContent  = '200';
+  document.getElementById('fsSlider').value = 65;  document.getElementById('fsVal').textContent = '6.5';
+  document.getElementById('cSlider').value  = 110; document.getElementById('cVal').textContent  = '1.1×';
+  document.getElementById('bSlider').value  = 15;  document.getElementById('bVal').textContent  = '+15';
+  document.getElementById('gSlider').value  = 120; document.getElementById('gVal').textContent  = '1.20';
+  document.getElementById('eSlider').value  = 25;  document.getElementById('eVal').textContent  = '0.25';
+  document.getElementById('mLight').checked = true;
 }
 
 function autoRenderStatic() {
   applyLoveSettings();
-  fetch(STATIC_IMG_SRC)
-    .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.blob(); })
-    .then(blob => new Promise((res, rej) => {
-      const fr = new FileReader();
-      fr.onload  = () => res(fr.result);
-      fr.onerror = rej;
-      fr.readAsDataURL(blob);
-    }))
-    .then(dataUrl => {
-      imgSrc = dataUrl;
-      document.getElementById('previewImg').src = dataUrl;
-      document.getElementById('previewWrap').style.display = 'flex';
-      render();
-    })
-    .catch(err => console.warn('Auto-load failed:', err));
-}
 
-function showAutoPrompt() {
-  const overlay = document.getElementById('auto-prompt');
-  if (overlay) overlay.style.display = 'flex';
+  if (preloadedDataUrl) {
+    // Image already ready — render immediately
+    imgSrc = preloadedDataUrl;
+    document.getElementById('previewImg').src = preloadedDataUrl;
+    document.getElementById('previewWrap').style.display = 'flex';
+    render();
+  } else {
+    // Still loading — wait up to 8s then try fetch again
+    const maxWait = 8000;
+    const interval = 200;
+    let waited = 0;
+    const poll = setInterval(() => {
+      waited += interval;
+      if (preloadedDataUrl) {
+        clearInterval(poll);
+        imgSrc = preloadedDataUrl;
+        document.getElementById('previewImg').src = preloadedDataUrl;
+        document.getElementById('previewWrap').style.display = 'flex';
+        render();
+      } else if (waited >= maxWait) {
+        clearInterval(poll);
+        // Last resort: try fetch one more time inline
+        fetch(STATIC_IMG_PATH)
+          .then(r => r.blob())
+          .then(blob => new Promise((res, rej) => {
+            const fr = new FileReader();
+            fr.onload  = () => res(fr.result);
+            fr.onerror = rej;
+            fr.readAsDataURL(blob);
+          }))
+          .then(dataUrl => {
+            imgSrc = dataUrl;
+            document.getElementById('previewImg').src = dataUrl;
+            document.getElementById('previewWrap').style.display = 'flex';
+            render();
+          })
+          .catch(() => {
+            // fetch totally blocked — show upload prompt
+            document.getElementById('emptyState').querySelector('p').textContent =
+              'Auto-load blocked. Please upload shek.jpeg manually.';
+          });
+      }
+    }, interval);
+  }
 }
 
 function skipIntro() { beginFade(); }
@@ -889,8 +935,6 @@ function replayIntro() {
   intro.classList.remove('fading', 'gone');
   document.getElementById('app-wrap').classList.remove('visible');
   document.getElementById('replay-btn').classList.remove('show');
-
-  // restart canvas
   introRAF = requestAnimationFrame(introLoop);
   introTimer = setTimeout(beginFade, 5500);
 }
@@ -899,15 +943,15 @@ function replayIntro() {
 //  ASCII ENGINE
 // ═══════════════════════════════════════════
 const CHARSETS = {
-  love:      { usesPhrase:true  },
-  block:     { ramp:['█','▓','▒','░','▐','▌','▪','·',' ',' '] },
-  photoreal: { ramp:['@','#','S','%','?','*','+',';',':',',','.',' '] },
-  dots:      { ramp:['⣿','⣶','⣤','⣀','⡀','⠄','⠂','⠁',' ',' '] }
+  love:      { usesPhrase: true },
+  block:     { ramp: ['█','▓','▒','░','▐','▌','▪','·',' ',' '] },
+  photoreal: { ramp: ['@','#','S','%','?','*','+',';',':',',','.',' '] },
+  dots:      { ramp: ['⣿','⣶','⣤','⣀','⡀','⠄','⠂','⠁',' ',' '] }
 };
 
 let imgSrc = null;
 
-const fileIn  = document.getElementById('fileIn');
+const fileIn   = document.getElementById('fileIn');
 const dropZone = document.getElementById('dropZone');
 
 fileIn.addEventListener('change', e => { if (e.target.files[0]) loadImg(e.target.files[0]); });
@@ -936,7 +980,7 @@ function wire(id, vid, fmt) {
 }
 wire('wSlider',  'wVal',  v => v);
 wire('fsSlider', 'fsVal', v => (v/10).toFixed(1));
-wire('cSlider',  'cVal',  v => (v/100).toFixed(1)+'×');
+wire('cSlider',  'cVal',  v => (v/100).toFixed(1)+'\u00d7');
 wire('bSlider',  'bVal',  v => (v>0?'+':'')+v);
 wire('gSlider',  'gVal',  v => (v/100).toFixed(2));
 wire('eSlider',  'eVal',  v => (v/100).toFixed(2));
@@ -974,40 +1018,54 @@ function unsharpMask(gray, w, h, radius, amount) {
 }
 
 function lumToChar(lum, edgeStr, mode, charsetKey, phraseIdx, edgeMix) {
-  let t = lum/255;
-  if (mode==='light') t=1-t;
-  const e = Math.min(1, edgeStr/200);
-  t = Math.max(0, t - e*edgeMix*0.6);
+  // t = 0 means needs MOST ink (darkest pixel in light mode)
+  // t = 1 means needs LEAST ink (brightest pixel in light mode)
+  let t = lum / 255;
+  if (mode === 'light') t = 1 - t;  // invert: dark pixel → t=0 → dense char
 
-  if (charsetKey==='love') {
-    // "I love you " repeating phrase mapped to luminance bands
-    // Lightest areas → space, mid → lowercase phrase, darkest → uppercase
-    // We never skip phraseIdx silently — every non-space pixel advances it
+  // Edges add a tiny bit of density for crispness
+  const e = Math.min(1, edgeStr / 255);
+  t = Math.max(0, t - e * edgeMix * 0.3);
+
+  if (charsetKey === 'love') {
     const phrase = "I love you ";
     const pl = phrase.length;
-    if (t > 0.93) return ' ';                          // pure white → space
-    const c = phrase[phraseIdx % pl];
-    if (t > 0.78) {
-      // very light: use only visually thin chars (I, l, space→dot, i)
-      // map to light chars from the phrase
-      const lightChars = 'I l  u  ';
-      return lightChars[phraseIdx % lightChars.length] || '.';
-    } else if (t > 0.55) {
-      return c.toLowerCase();                          // mid-light: lowercase
-    } else if (t > 0.28) {
-      return c;                                        // mid-dark: normal case
+    const c  = phrase[phraseIdx % pl];
+
+    // 10-level density ramp mapped to the phrase
+    // t=0 (darkest) → level 0 → densest chars (uppercase, doubled feel)
+    // t=1 (brightest) → level 9 → space
+    if (t > 0.90) {
+      return ' ';                                          // pure white bg
+    } else if (t > 0.78) {
+      // very light — use only the thinnest stroke chars from phrase: i, l, I, .
+      const thin = ['.', 'i', 'I', 'l', '.', 'I', 'i', '.', 'l', 'I', '.'];
+      return thin[phraseIdx % thin.length];
+    } else if (t > 0.64) {
+      // light — lowercase phrase chars, spaces replaced with thin char
+      return c === ' ' ? '.' : c.toLowerCase();
+    } else if (t > 0.50) {
+      // medium-light — normal lowercase phrase
+      return c === ' ' ? 'i' : c.toLowerCase();
+    } else if (t > 0.36) {
+      // medium — mixed case phrase as written
+      return c === ' ' ? 'u' : c;
+    } else if (t > 0.22) {
+      // medium-dark — uppercase phrase, spaces filled
+      return c === ' ' ? 'o' : c.toUpperCase();
     } else {
-      // darkest: uppercase + denser feel
-      return c === ' ' ? (phraseIdx % 3 === 0 ? 'I' : 'o') : c.toUpperCase();
+      // darkest — uppercase + fill spaces with dense chars
+      const dense = ['I','O','L','O','V','E','Y','O','U','I','O'];
+      return dense[phraseIdx % dense.length];
     }
   } else {
     const ramp = CHARSETS[charsetKey].ramp;
-    return ramp[Math.min(ramp.length-1, Math.floor(t*ramp.length))];
+    return ramp[Math.min(ramp.length - 1, Math.floor(t * ramp.length))];
   }
 }
 
 function setProgress(pct, label) {
-  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('progressBar').style.width = pct + '%';
   document.getElementById('progressLabel').textContent = label;
 }
 
@@ -1015,132 +1073,122 @@ function render() {
   if (!imgSrc) { alert('Please upload a photo first.'); return; }
 
   const cols       = parseInt(document.getElementById('wSlider').value);
-  const fontSize   = parseFloat(document.getElementById('fsSlider').value)/10;
-  const contrast   = parseFloat(document.getElementById('cSlider').value)/100;
+  const fontSize   = parseFloat(document.getElementById('fsSlider').value) / 10;
+  const contrast   = parseFloat(document.getElementById('cSlider').value) / 100;
   const bright     = parseInt(document.getElementById('bSlider').value);
-  const gamma      = parseFloat(document.getElementById('gSlider').value)/100;
-  const edgeMix    = parseFloat(document.getElementById('eSlider').value)/100;
+  const gamma      = parseFloat(document.getElementById('gSlider').value) / 100;
+  const edgeMix    = parseFloat(document.getElementById('eSlider').value) / 100;
   const mode       = document.querySelector('input[name="mode"]:checked').value;
   const charsetKey = document.querySelector('input[name="charset"]:checked').value;
 
   document.getElementById('progressWrap').classList.add('active');
-  setProgress(5,'Loading image…');
+  setProgress(5, 'Loading image\u2026');
 
+  // imgSrc is always a base64 data URL — safe for canvas getImageData
   const img = new Image();
-  img.onload  = () => setTimeout(() => doRender(img,cols,fontSize,contrast,bright,gamma,edgeMix,mode,charsetKey), 30);
-  img.onerror = () => { document.getElementById('progressWrap').classList.remove('active'); alert('Failed to load image.'); };
-  img.src = imgSrc;
+  img.onload = () => setTimeout(() => doRender(img, cols, fontSize, contrast, bright, gamma, edgeMix, mode, charsetKey), 30);
+  img.onerror = () => {
+    document.getElementById('progressWrap').classList.remove('active');
+    alert('Failed to load image. Please try again.');
+  };
+  img.src = imgSrc; // always base64 — no taint
 }
 
-function doRender(img,cols,fontSize,contrast,bright,gamma,edgeMix,mode,charsetKey) {
-  setProgress(15,'Scaling…');
-  const aspect = img.naturalHeight/img.naturalWidth;
-  const rows   = Math.round(cols*aspect*0.52);
+function doRender(img, cols, fontSize, contrast, bright, gamma, edgeMix, mode, charsetKey) {
+  setProgress(15, 'Scaling\u2026');
+  const aspect = img.naturalHeight / img.naturalWidth;
+  const rows   = Math.round(cols * aspect * 0.52);
 
-  const cv = document.getElementById('cv');
-  cv.width=cols; cv.height=rows;
+  const cv  = document.getElementById('cv');
+  cv.width  = cols;
+  cv.height = rows;
   const ctx = cv.getContext('2d');
-  ctx.imageSmoothingEnabled=true;
-  ctx.imageSmoothingQuality='high';
-  ctx.drawImage(img,0,0,cols,rows);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, cols, rows);
 
-  setProgress(30,'Processing pixels…');
-  const px = ctx.getImageData(0,0,cols,rows).data;
-  const gray = new Float32Array(cols*rows);
-  for (let i=0;i<cols*rows;i++) {
-    const pi=i*4;
-    let r=clamp(px[pi]+bright), g=clamp(px[pi+1]+bright), b=clamp(px[pi+2]+bright);
-    let lum=0.2126*r+0.7152*g+0.0722*b;
-    lum=255*Math.pow(lum/255,1.0/gamma);
-    gray[i]=clamp(128+(lum-128)*contrast);
+  setProgress(30, 'Processing pixels\u2026');
+  const px   = ctx.getImageData(0, 0, cols, rows).data;
+  const gray = new Float32Array(cols * rows);
+  for (let i = 0; i < cols * rows; i++) {
+    const pi = i * 4;
+    let r = clamp(px[pi]   + bright);
+    let g = clamp(px[pi+1] + bright);
+    let b = clamp(px[pi+2] + bright);
+    let lum = 0.2126*r + 0.7152*g + 0.0722*b;
+    lum = 255 * Math.pow(lum / 255, 1.0 / gamma);
+    gray[i] = clamp(128 + (lum - 128) * contrast);
   }
 
-  setProgress(50,'Enhancing details…');
-  const sharpened = unsharpMask(gray,cols,rows,1.5,1.2);
-  const edges = sobelEdges(sharpened,cols,rows);
+  setProgress(50, 'Enhancing details\u2026');
+  const sharpened = unsharpMask(gray, cols, rows, 1.5, 1.2);
+  const edges     = sobelEdges(sharpened, cols, rows);
 
-  setProgress(70,'Generating characters…');
-  let out='', phraseIdx=0;
-  for (let y=0;y<rows;y++) {
-    for (let x=0;x<cols;x++) {
-      const i=y*cols+x;
-      const ch=lumToChar(sharpened[i],edges[i],mode,charsetKey,phraseIdx,edgeMix);
-      out+=ch;
-      if (ch!==' ') phraseIdx++;
+  setProgress(70, 'Generating characters\u2026');
+  let out = '', phraseIdx = 0;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const i  = y * cols + x;
+      const ch = lumToChar(sharpened[i], edges[i], mode, charsetKey, phraseIdx, edgeMix);
+      out += ch;
+      if (ch !== ' ') phraseIdx++;
     }
-    out+='\n';
+    out += '\n';
   }
 
-  setProgress(90,'Rendering…');
+  setProgress(90, 'Rendering\u2026');
   setTimeout(() => {
     const pre = document.getElementById('ascii-out');
-    document.getElementById('emptyState').style.display='none';
-    pre.style.display='block';
-    pre.textContent=out;
-    pre.style.fontSize=fontSize+'px';
-    pre.style.opacity='0';
-    pre.style.transform='translateY(8px)';
-    document.getElementById('sCols').textContent=cols;
-    document.getElementById('sRows').textContent=rows;
-    document.getElementById('qualityBadge').style.display='inline';
-    setProgress(100,'Done ♥');
-    requestAnimationFrame(()=>setTimeout(()=>{
+    document.getElementById('emptyState').style.display = 'none';
+    pre.style.display    = 'block';
+    pre.textContent      = out;
+    pre.style.fontSize   = fontSize + 'px';
+    pre.style.opacity    = '0';
+    pre.style.transform  = 'translateY(8px)';
+    pre.style.transition = '';
+    document.getElementById('sCols').textContent = cols;
+    document.getElementById('sRows').textContent = rows;
+    document.getElementById('qualityBadge').style.display = 'inline';
+    setProgress(100, 'Done \u2665');
+    requestAnimationFrame(() => setTimeout(() => {
       document.getElementById('progressWrap').classList.remove('active');
-      pre.style.transition='opacity .45s ease, transform .45s ease';
-      pre.style.opacity='1';
-      pre.style.transform='translateY(0)';
-    },300));
-  },30);
+      pre.style.transition = 'opacity .6s ease, transform .6s ease';
+      pre.style.opacity    = '1';
+      pre.style.transform  = 'translateY(0)';
+    }, 300));
+  }, 30);
 }
 
 function saveTxt() {
-  const pre=document.getElementById('ascii-out');
+  const pre = document.getElementById('ascii-out');
   if (!pre.textContent.trim()) return;
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([pre.textContent],{type:'text/plain;charset=utf-8'}));
-  a.download='i-love-you-ascii.txt'; a.click();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([pre.textContent], {type:'text/plain;charset=utf-8'}));
+  a.download = 'i-love-you-ascii.txt';
+  a.click();
 }
 
 function savePng() {
-  const pre=document.getElementById('ascii-out');
+  const pre = document.getElementById('ascii-out');
   if (!pre.textContent.trim()) return;
-  const fs=parseFloat(pre.style.fontSize)||7;
-  const lines=pre.textContent.split('\n');
-  const oc=document.createElement('canvas');
-  oc.width=Math.ceil(lines[0].length*fs*0.6);
-  oc.height=Math.ceil(lines.length*fs*1.05);
-  const octx=oc.getContext('2d');
-  const mode=document.querySelector('input[name="mode"]:checked').value;
-  octx.fillStyle=mode==='light'?'#fff9f4':'#fdf6ec';
-  octx.fillRect(0,0,oc.width,oc.height);
-  octx.fillStyle='#1a0f0c';
-  octx.font=`${fs}px Inconsolata,monospace`;
-  octx.textBaseline='top';
-  lines.forEach((l,r)=>octx.fillText(l,0,r*fs*1.05));
-  const a=document.createElement('a');
-  a.href=oc.toDataURL('image/png');
-  a.download='i-love-you-ascii.png'; a.click();
+  const fs    = parseFloat(pre.style.fontSize) || 7;
+  const lines = pre.textContent.split('\n');
+  const oc    = document.createElement('canvas');
+  oc.width    = Math.ceil(lines[0].length * fs * 0.6);
+  oc.height   = Math.ceil(lines.length * fs * 1.05);
+  const octx  = oc.getContext('2d');
+  const mode  = document.querySelector('input[name="mode"]:checked').value;
+  octx.fillStyle = mode === 'light' ? '#fff9f4' : '#fdf6ec';
+  octx.fillRect(0, 0, oc.width, oc.height);
+  octx.fillStyle    = '#1a0f0c';
+  octx.font         = `${fs}px Inconsolata,monospace`;
+  octx.textBaseline = 'top';
+  lines.forEach((l, row) => octx.fillText(l, 0, row * fs * 1.05));
+  const a = document.createElement('a');
+  a.href     = oc.toDataURL('image/png');
+  a.download = 'i-love-you-ascii.png';
+  a.click();
 }
-
-// Wire auto-prompt file picker
-document.addEventListener('DOMContentLoaded', () => {
-  const apInput = document.getElementById('ap-file-input');
-  if (apInput) {
-    apInput.addEventListener('change', e => {
-      if (!e.target.files[0]) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        imgSrc = ev.target.result;
-        document.getElementById('previewImg').src = imgSrc;
-        document.getElementById('previewWrap').style.display = 'flex';
-        document.getElementById('auto-prompt').style.display = 'none';
-        render();
-      };
-      reader.readAsDataURL(e.target.files[0]);
-    });
-  }
-});
-
 </script>
 </body>
 </html>
